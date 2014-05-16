@@ -197,7 +197,7 @@ p <- p + geom_line() + geom_point() + theme(axis.text.x = element_text(angle = 9
 p
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-12](unnamed-chunk-12.png) 
 
 As a conclusion, what is the OECD (ocde in french) doing ?
 
