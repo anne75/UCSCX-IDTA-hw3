@@ -197,7 +197,7 @@ p <- p + ylab("Healthcare Cost as percent of GDP")
 p
 ```
 
-![plot of chunk unnamed-chunk-12](unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
 
 As a conclusion, where is the OECD (ocde in french) getting its numbers ?
 
