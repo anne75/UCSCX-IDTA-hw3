@@ -4,10 +4,10 @@ Homework 3
 
 Question 1
 ----------------
-Read  the  World  Bank  webpage  and  store  as  a  nice  data  frame.  
-Source:  The  data  can  be  found  here: http://wdi.worldbank.org/table/4.1  
-Hints:  You  can  try  readHTMLTable  
-We  are  interested  in  the  third  table. [[3]]  will  select  the  third  element  in  a list.  Store  as  a  data  frame.  Rename  the  columns  to  be  meaningful. 
+*Read  the  World  Bank  webpage  and  store  as  a  nice  data  frame.*  
+*Source:  The  data  can  be  found  here: http://wdi.worldbank.org/table/4.1*  
+*Hints:  You  can  try  readHTMLTable*  
+*We  are  interested  in  the  third  table. [[3]]  will  select  the  third  element  in  a list.  Store  as  a  data  frame.  Rename  the  columns  to  be  meaningful.* 
 
 
 ```r
@@ -16,13 +16,13 @@ url <- "http://wdi.worldbank.org/table/4.1"
 mytable <- readHTMLTable(url, colClasses = c("character", rep("numeric", 10)))[[3]]
 ```
 
-I check my result
+I check my result with
 
 ```r
 str(mytable)
 ```
 
-I have a dataframe with country names as characters and other numerical columns as numbers, and a lot of NAs where there are no values.
+To sum up, I have a dataframe with country names as characters and other columns containing numbers, and a lot of NAs where there are no values.
 
 Some cleaning up, and naming the columns
 
@@ -56,7 +56,7 @@ My end result looks like
 
 Question 2
 -----------
-Write  an  R  function  that  will  take  the name of  a  country  and  return  its  Avg Industrial  Growth  value for 2000‐2012.(Use your dataframe as the data source for your function to look up)
+*Write  an  R  function  that  will  take  the name of  a  country  and  return  its  Avg Industrial  Growth  value for 2000‐2012.(Use your dataframe as the data source for your function to look up)*
 
 
 ```r
@@ -89,8 +89,7 @@ iG2000("india")
 
 Question 3
 ----------------
-By  using  R  to  read  from Wikipedia,  create  a  data  frame  that  contains the names  of  countries and  their Healthcare  expenditure.  You  can  use  any wikipedia page  that  has  a  population  table  in  it.  
-You  can  use any measure  of  healthcare  spending  that  you  find or  like
+*By  using  R  to  read  from Wikipedia,  create  a  data  frame  that  contains the names  of  countries and  their Healthcare  expenditure.  You  can  use  any wikipedia page  that  has  a  population  table  in  it. You  can  use any measure  of  healthcare  spending  that  you  find or  like*
 
 I will be using this page http://en.wikipedia.org/wiki/Health_care_system. It contains data about 10 countries and gives the healthcare cost as percent of GDP. I am interested in the 1st and 8th columns.
 Here is what I did and the result:
@@ -118,23 +117,23 @@ healthCost
 
 
 
-*_BONUS_*  
+***BONUS***  
 
-As I was browsing in search of data for my project, I stumbled upon some CIA's datasets.
-They happen to have health expenditure data, so let's match wikipedia/OECD and the CIA data 
+As I was browsing in search of data for my project, I stumbled upon some CIA's datasets.  
+They happen to have health costs per GDP data, so let's see if wikipedia/OECD and the CIA data match.  
 I downloaded the data from https://www.cia.gov/library/publications/the-world-factbook/rankorder/rawdata_2225.txt for the CIA set and http://stats.oecd.org/ for the OECD set.
 After much trouble I ended up saving the data to my working directory (you can see the frustration in me going back to french)
 
 ```r
-cia <- read.table("ciahealth.txt", sep = "\t", quote = "", colClasses = c("NULL", 
+cia <- read.table("../ciahealth.txt", sep = "\t", quote = "", colClasses = c("NULL", 
     "character", "numeric"))
 cia[, 1] <- tolower(cia[, 1])
-ocde <- read.csv("depensesSante.csv", header = T)
+ocde <- read.csv("../depensesSante.csv", header = T)
 ocde <- within(ocde, Country <- tolower(as.character(Country)))
 ocde <- within(ocde, expense <- as.numeric(as.character(expense)))
 ```
 
-I merge the 2 datasets on country name. Since cia contains 190 countries and ocde 34 I expect at most 34 rows.
+I merge the 2 datasets on country name. Since cia contains 190 countries and ocde 34, so I expect at most 34 rows.
 
 ```r
 cia.ocde <- merge(cia, ocde, by.x = "V2", by.y = "Country")
@@ -142,11 +141,11 @@ names(cia.ocde) <- c("country", "cia", "ocde")
 ```
 
 I see only 32 countries.
-After cheking, 2 countries show a different names in the 2 data sets.
+After cheking, 2 countries show a different name in the 2 data sets.
 However, the most pressing issues is that only 0 values match.
 
-Where is the truth, I guess worldbank data are in order.  
-I could only get 2012 data, so I will have to look for similar data, not exactly matching
+Where is the truth ? I guess World Bank data are in order.  
+I could only get 2012 data, so I will have to look for similar data, and not a perfect match.
 
 ```r
 url <- "http://wdi.worldbank.org/table/2.15"
@@ -192,26 +191,27 @@ order.melt$country <- factor(order.melt$country, levels = unique(order.melt$coun
 require(ggplot2)
 p <- ggplot(data = order.melt, aes(x = country, y = value, colour = variable, 
     group = variable))
-p <- p + geom_line() + geom_point() + theme(axis.text.x = element_text(angle = 90, 
+p <- p + geom_point(size = 2.5) + theme(axis.text.x = element_text(angle = 90, 
     vjust = 0.5, hjust = 1))
+p <- p + ylab("Healthcare Cost as percent of GDP")
 p
 ```
 
 ![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
 
-As a conclusion, what is the OECD (ocde in french) doing ?
+As a conclusion, where is the OECD (ocde in french) getting its numbers ?
 
 Question 4
 ------------
-Read the data file: KCASANTA142.csv  
-Notice	that it	has	one	column	that	has	the	time and	the	date	and	the	time combined	
-Create	new	columns	for	Month,	Day,	Year,	Hour	and	Minute	in	the	data	frame.	
-You	can	write	a	function	and	use	lapply()	
+*Read the data file: KCASANTA142.csv*  
+*Notice	that it	has	one	column	that	has	the	time and	the	date	and	the	time combined*	
+*Create	new	columns	for	Month,	Day,	Year,	Hour	and	Minute	in	the	data	frame.*	
+*You	can	write	a	function	and	use	lapply()*	
 
 The file is in my working directory
 
 ```r
-mydf <- read.csv("KCASANTA142.csv", stringsAsFactors = F)
+mydf <- read.csv("../KCASANTA142.csv", stringsAsFactors = F)
 # I take my Time column and will make a list
 timelist <- strsplit(mydf$Time, "\\-+|\\ |\\:")
 # I reshape it as a df
@@ -240,9 +240,9 @@ head(mynewdf)
 ```
 
 
-Give at most one measure per hour.
+*Crate a new data frame that would give at most one measure per hour.*
 
-There are 2 possibilities to do so, here they are and the result
+I can see 2 possibilities to do so, here they are and the result
 
 ```r
 perhour <- aggregate(temperature ~ hour + day + month + year, data = mynewdf, 

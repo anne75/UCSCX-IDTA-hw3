@@ -96,25 +96,30 @@ str(healthCost)
 #it failed: Warning message: XML content does not seem to be XML
 #then I tried the txt
 #I use download.file, it failed, I think because of the https, I tried method="curl", failed as well
-#sh: 1: curl: not found
-#With the RCurl package I tried
-#This worked
+#I get sh: 1: curl: not found
+#With loading the RCurl package first I tried again, with no success
+#I try again with another method
+url<-"https://www.cia.gov/library/publications/the-world-factbook/rankorder/rawdata_2225.txt"
+v<-download.file(url,destfile="../ciadata.txt",method="wget" )
+#it works
+
+#This worked as well
 v<-getURLContent("https://www.cia.gov/library/publications/the-world-factbook/rankorder/rawdata_2225.txt")
 #but all was put in one long character vector
 #so I ended up saving the page as txt in my working directory
-cia<-read.table("ciahealth.txt", sep="\t", quote="", 
+cia<-read.table("../ciahealth.txt", sep="\t", quote="", 
                 colClasses=c("NULL", "character", "numeric"))
 cia[,1]<-tolower(cia[,1])
 #I downloaded the data from the http://stats.oecd.org/ website as XLS format, I need to import
 #it now
 require(xlsx)
 #And I failed, I guess the formatting of the file, with links... was the reason
-ocde<-read.xlsx2("depensesSante.xls", sheetIndex=2, startRow=9, endRow=42, colIndex=c(1,4))
+ocde<-read.xlsx2("../depensesSante.xls", sheetIndex=2, startRow=9, endRow=42, colIndex=c(1,4))
 # Error in .jcall("RJavaTools", "Ljava/lang/Object;", "invokeMethod", cl,  : 
 #java.lang.IllegalArgumentException: Your InputStream was neither an OLE2 stream, nor an OOXML stream
 #So I ended up taking the 2 rows I was interested in, cleared the format and save it indepently as csv
 #Note that stringAsFactors=F failed , missing an s again !!!
-ocde<-read.csv("depensesSante.csv", header=T)
+ocde<-read.csv("../depensesSante.csv", header=T)
 str(ocde)
 ocde<-within(ocde, Country<-tolower(as.character(Country)))
 ocde<-within(ocde, expense<-as.numeric(as.character(expense)))
@@ -160,8 +165,9 @@ order.melt<-melt(ordered, id.vars="country" )
 order.melt$country<-factor(order.melt$country, levels=unique(order.melt$country), ordered=T)
 require(ggplot2)
 p<-ggplot(data = order.melt, aes(x=country, y= value, colour=variable, group=variable))
-p<-p + geom_line() + geom_point() +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-p
+p<-p + geom_point(size=2.5) +theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+p<-p+ylab("Healthcare Cost as percent of GDP")
+p 
 
 #The plot makes the case
 
