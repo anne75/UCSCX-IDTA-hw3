@@ -121,22 +121,28 @@ ocde<-read.xlsx2("../depensesSante.xls", sheetIndex=2, startRow=9, endRow=42, co
 #Note that stringAsFactors=F failed , missing an s again !!!
 ocde<-read.csv("../depensesSante.csv", header=T)
 str(ocde)
-ocde<-within(ocde, Country<-tolower(as.character(Country)))
-ocde<-within(ocde, expense<-as.numeric(as.character(expense)))
+#This data set contains 3 columns:country, health cost general govt expense, total expense
+names(ocde)<-c("country", "gvtExpense", "totExpense")
+
+ocde<-within(ocde, country<-tolower(as.character(country)))
+ocde<-within(ocde, gvtExpense<-as.numeric(as.character(gvtExpense)))
+ocde<-within(ocde, totExpense<-as.numeric(as.character(totExpense)))
 
 #I merge the 2 datasets on country name. since cia has 190 countries and ocde 34 I expect at most 34
-cia.ocde<-merge(cia, ocde, by.x="V2", by.y="Country")
+cia.ocde<-merge(cia, ocde, by.x="V2", by.y="country")
 dim(cia.ocde)
 #I rename
-names(cia.ocde)<-c("country", "cia", "ocde")
+names(cia.ocde)<-c("country", "cia", "gvtExpense", "totExpense")
 #I see only 32 countries
 ocde$Country[!(ocde$Country %in% cia.ocde$V2)]
 #actually those countries appear in the cia set, but with a slightly different name
 
 #However, the most pressing issues is that the 2 numeric columns do not match
-with(cia.ocde, sum(cia==ocde, na.rm=T))
+with(cia.ocde, sum(cia==totExpense, na.rm=T))
+#With summary, can see some data closely match though
+summary(cia.ocde)
 
-#Where is the truth, I guess worldbank data are in order
+#They do not share the same source, I give a look at the World Bank data
 #I could only get 2012 data, so I will have to look for similar data, not exactly matching
 url<-"http://wdi.worldbank.org/table/2.15"
 wb<-readHTMLTable(url, colClasses=c("character", rep("numeric",10)), which=3)
@@ -149,7 +155,7 @@ wb<-within(wb, V1<-tolower(V1))
 
 #I merge again
 cia.ocde.wb<-merge(cia.ocde,wb, by.x="country", by.y="V1")
-colnames(cia.ocde.wb)[4]<-"wb"
+colnames(cia.ocde.wb)[5]<-"wb"
 
 #I am not after precision
 summary(cia.ocde.wb)
@@ -196,3 +202,5 @@ mynewdf<-cbind("temperature"=mydf$TemperatureF, timedf[,c("month","day","year",'
 #aggregate
 perhour<-aggregate(temperature~hour+day+month+year, data=mynewdf, FUN=mean)
 perhour2<-ddply(mynewdf,.(hour,day,month,year),summarise, meanTemp=mean(temperature))
+library(dplyr)
+perhour3<-mynewdf%.%group_by(hour,day,month,year)%.%mutate(meanTemp=mean(temperature))

@@ -129,22 +129,39 @@ cia <- read.table("../ciahealth.txt", sep = "\t", quote = "", colClasses = c("NU
     "character", "numeric"))
 cia[, 1] <- tolower(cia[, 1])
 ocde <- read.csv("../depensesSante.csv", header = T)
-ocde <- within(ocde, Country <- tolower(as.character(Country)))
-ocde <- within(ocde, expense <- as.numeric(as.character(expense)))
+# This data set contains 3 columns:country, health cost general govt
+# expense, total expense
+names(ocde) <- c("country", "gvtExpense", "totExpense")
+ocde <- within(ocde, country <- tolower(as.character(country)))
+ocde <- within(ocde, gvtExpense <- as.numeric(as.character(gvtExpense)))
+ocde <- within(ocde, totExpense <- as.numeric(as.character(totExpense)))
 ```
 
 I merge the 2 datasets on country name. Since cia contains 190 countries and ocde 34, so I expect at most 34 rows.
 
 ```r
-cia.ocde <- merge(cia, ocde, by.x = "V2", by.y = "Country")
-names(cia.ocde) <- c("country", "cia", "ocde")
+cia.ocde <- merge(cia, ocde, by.x = "V2", by.y = "country")
+names(cia.ocde) <- c("country", "cia", "gvtExpense", "totExpense")
 ```
 
 I see only 32 countries.
 After cheking, 2 countries show a different name in the 2 data sets.
 However, the most pressing issues is that only 0 values match.
+With summary, can see some data closely match though  
 
-Where is the truth ? I guess World Bank data are in order.  
+```
+##    country               cia          gvtExpense     totExpense   
+##  Length:32          Min.   : 6.00   Min.   :3.25   Min.   : 5.85  
+##  Class :character   1st Qu.: 7.70   1st Qu.:6.00   1st Qu.: 8.51  
+##  Mode  :character   Median : 9.30   Median :7.07   Median : 9.03  
+##                     Mean   : 9.44   Mean   :6.85   Mean   : 9.34  
+##                     3rd Qu.:10.60   3rd Qu.:7.96   3rd Qu.:10.49  
+##                     Max.   :17.90   Max.   :9.49   Max.   :16.99  
+##                                     NA's   :6      NA's   :5
+```
+
+
+They do not share the same source, I give a look at the World Bank data
 I could only get 2012 data, so I will have to look for similar data, and not a perfect match.
 
 ```r
@@ -153,7 +170,7 @@ wb <- readHTMLTable(url, colClasses = c("character", rep("numeric", 10)), which 
 wb <- wb[, 1:2]
 wb <- within(wb, V1 <- tolower(V1))
 cia.ocde.wb <- merge(cia.ocde, wb, by.x = "country", by.y = "V1")
-colnames(cia.ocde.wb)[4] <- "wb"
+colnames(cia.ocde.wb)[5] <- "wb"
 ```
 
 I get an overview
@@ -163,14 +180,22 @@ summary(cia.ocde.wb)
 ```
 
 ```
-##    country               cia             ocde            wb       
-##  Length:32          Min.   : 6.00   Min.   :2.34   Min.   : 5.90  
-##  Class :character   1st Qu.: 7.70   1st Qu.:4.93   1st Qu.: 7.78  
-##  Mode  :character   Median : 9.30   Median :5.72   Median : 9.25  
-##                     Mean   : 9.44   Mean   :5.67   Mean   : 9.41  
-##                     3rd Qu.:10.60   3rd Qu.:6.38   3rd Qu.:10.82  
-##                     Max.   :17.90   Max.   :8.02   Max.   :17.90  
-##                                     NA's   :4
+##    country               cia          gvtExpense     totExpense   
+##  Length:32          Min.   : 6.00   Min.   :3.25   Min.   : 5.85  
+##  Class :character   1st Qu.: 7.70   1st Qu.:6.00   1st Qu.: 8.51  
+##  Mode  :character   Median : 9.30   Median :7.07   Median : 9.03  
+##                     Mean   : 9.44   Mean   :6.85   Mean   : 9.34  
+##                     3rd Qu.:10.60   3rd Qu.:7.96   3rd Qu.:10.49  
+##                     Max.   :17.90   Max.   :9.49   Max.   :16.99  
+##                                     NA's   :6      NA's   :5      
+##        wb       
+##  Min.   : 5.90  
+##  1st Qu.: 7.78  
+##  Median : 9.25  
+##  Mean   : 9.41  
+##  3rd Qu.:10.82  
+##  Max.   :17.90  
+## 
 ```
 
 I can see the CIA and World Bank converge.  
@@ -197,9 +222,11 @@ p <- p + ylab("Healthcare Cost as percent of GDP")
 p
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12.png) 
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
-As a conclusion, where is the OECD (ocde in french) getting its numbers ?
+
+We can see some CIA closer to the World Bank data than the OECD ones, is it their source, or do they compile their own data set from scratch. We can see some discrepancies though, but since we live in a period of crisis, it can be explained by either a change in countries GDP between 2011 and 2012 or a change in health care policies.
+I plotted the government expense as well, and though we can see some kind of linear dependency between the government expense and the total expense, I am not sure it would be relevant.
 
 Question 4
 ------------
@@ -242,22 +269,48 @@ head(mynewdf)
 
 *Crate a new data frame that would give at most one measure per hour.*
 
-I can see 2 possibilities to do so, here they are and the result
+I can see 3 possibilities to do so, here they are and the result
 
 ```r
 perhour <- aggregate(temperature ~ hour + day + month + year, data = mynewdf, 
     FUN = mean)
-perhour2 <- ddply(mynewdf, .(hour, day, month, year), summarise, meanTemp = mean(temperature))
+perhour2 <- ddply(mynewdf, .(year, month, day, hour), summarise, meanTemp = mean(temperature))
+library(dplyr)
+perhour3 <- mynewdf %.% group_by(year, month, day, hour) %.% summarise(meanTemp = mean(temperature))
+dim(perhour)
+```
+
+```
+## [1] 8641    5
+```
+
+```r
+dim(perhour2)
+```
+
+```
+## [1] 8641    5
+```
+
+```r
+dim(perhour3)
+```
+
+```
+## [1] 8641    5
+```
+
+```r
 head(perhour2)
 ```
 
 ```
-##   hour day month year meanTemp
-## 1   00  01    01 2011    49.26
-## 2   00  01    02 2011    48.40
-## 3   00  01    03 2011    42.05
-## 4   00  01    04 2011    61.40
-## 5   00  01    05 2011    53.10
-## 6   00  01    06 2011    52.77
+##   year month day hour meanTemp
+## 1 2011    01  01   00    49.26
+## 2 2011    01  01   01    49.23
+## 3 2011    01  01   02    49.58
+## 4 2011    01  01   03    47.21
+## 5 2011    01  01   04    47.08
+## 6 2011    01  01   05    47.80
 ```
 

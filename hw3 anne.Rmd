@@ -83,19 +83,26 @@ cia<-read.table("../ciahealth.txt", sep="\t", quote="",
                 colClasses=c("NULL", "character", "numeric"))
 cia[,1]<-tolower(cia[,1])
 ocde<-read.csv("../depensesSante.csv", header=T)
-ocde<-within(ocde, Country<-tolower(as.character(Country)))
-ocde<-within(ocde, expense<-as.numeric(as.character(expense)))
+#This data set contains 3 columns:country, health cost general govt expense, total expense
+names(ocde)<-c("country", "gvtExpense", "totExpense")
+ocde<-within(ocde, country<-tolower(as.character(country)))
+ocde<-within(ocde, gvtExpense<-as.numeric(as.character(gvtExpense)))
+ocde<-within(ocde, totExpense<-as.numeric(as.character(totExpense)))
 ```
 I merge the 2 datasets on country name. Since cia contains 190 countries and ocde 34, so I expect at most 34 rows.
 ```{r}
-cia.ocde<-merge(cia, ocde, by.x="V2", by.y="Country")
-names(cia.ocde)<-c("country", "cia", "ocde")
+cia.ocde<-merge(cia, ocde, by.x="V2", by.y="country")
+names(cia.ocde)<-c("country", "cia", "gvtExpense", "totExpense")
 ```
 I see only `r nrow(cia.ocde)` countries.
 After cheking, 2 countries show a different name in the 2 data sets.
-However, the most pressing issues is that only `r with(cia.ocde, sum(cia==ocde, na.rm=T))` values match.
+However, the most pressing issues is that only `r with(cia.ocde, sum(cia==totExpense, na.rm=T))` values match.
+With summary, can see some data closely match though  
+```{r, echo=FALSE}
+summary(cia.ocde)
+```
 
-Where is the truth ? I guess World Bank data are in order.  
+They do not share the same source, I give a look at the World Bank data
 I could only get 2012 data, so I will have to look for similar data, and not a perfect match.
 ```{r, warning=FALSE}
 url<-"http://wdi.worldbank.org/table/2.15"
@@ -103,7 +110,7 @@ wb<-readHTMLTable(url, colClasses=c("character", rep("numeric",10)), which=3)
 wb<-wb[,1:2]
 wb<-within(wb, V1<-tolower(V1))
 cia.ocde.wb<-merge(cia.ocde,wb, by.x="country", by.y="V1")
-colnames(cia.ocde.wb)[4]<-"wb"
+colnames(cia.ocde.wb)[5]<-"wb"
 ```
 I get an overview
 ```{r}
@@ -116,7 +123,7 @@ library(reshape2)
 library(ggplot2)
 ```
 
-```{r fig.width=9, fig.height=6, warning=FALSE}
+```{r fig.width=11, fig.height=6, warning=FALSE}
 ordered<-cia.ocde.wb[order(cia.ocde.wb$wb),]
 order.melt<-melt(ordered, id.vars="country")
 order.melt$country<-factor(order.melt$country, levels=unique(order.melt$country), ordered=T)
@@ -126,7 +133,9 @@ p<-p + geom_point(size=2.5) +theme(axis.text.x = element_text(angle = 90, vjust 
 p<-p+ylab("Healthcare Cost as percent of GDP")
 p                                   
 ```
-As a conclusion, where is the OECD (ocde in french) getting its numbers ?
+
+We can see some CIA closer to the World Bank data than the OECD ones, is it their source, or do they compile their own data set from scratch. We can see some discrepancies though, but since we live in a period of crisis, it can be explained by either a change in countries GDP between 2011 and 2012 or a change in health care policies.
+I plotted the government expense as well, and though we can see some kind of linear dependency between the government expense and the total expense, I am not sure it would be relevant.
 
 Question 4
 ------------
@@ -154,9 +163,14 @@ head(mynewdf)
 
 *Crate a new data frame that would give at most one measure per hour.*
 
-I can see 2 possibilities to do so, here they are and the result
-```{r}
+I can see 3 possibilities to do so, here they are and the result
+```{r, message=FALSE}
 perhour<-aggregate(temperature~hour+day+month+year, data=mynewdf, FUN=mean)
-perhour2<-ddply(mynewdf,.(hour,day,month,year),summarise, meanTemp=mean(temperature))
+perhour2<-ddply(mynewdf,.(year,month,day,hour),summarise, meanTemp=mean(temperature))
+library(dplyr)
+perhour3<-mynewdf%.%group_by(year,month,day,hour)%.%summarise(meanTemp=mean(temperature))
+dim(perhour)
+dim(perhour2)
+dim(perhour3)
 head(perhour2)
 ```
